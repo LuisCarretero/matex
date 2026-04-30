@@ -28,8 +28,8 @@ def run_supervised_training_and_eval(args, logdir='log'):
     yaml = YAML()
     v = yaml.load(open(osp.join('configs', 'materials.yml')))
 
-    # Environment 
-    seed = v['env']['seed']
+    # Environment
+    seed = v['env']['seed'] if args.seed is None else args.seed
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
@@ -175,6 +175,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_depth', type=int, default=3)
     parser.add_argument('--debug', default=False)
     parser.add_argument('--model_path', default=None) #datetime
+    parser.add_argument('--seed', type=int, default=None, help="Override seed in materials.yml")
     args = parser.parse_args()
 
     run_supervised_training_and_eval(args)
