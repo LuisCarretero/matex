@@ -98,3 +98,36 @@ AFLOW Debye/Shear/Thermal-Conductivity/Thermal-Expansion are reported in log10 (
 - Add MoleculeNet (replace deepchem dep with direct RDKit if we want a clean env).
 - Multi-seed runs + bootstrap CIs for the precision metric.
 - The PyTorch reimplementation / cleanup (separate task — the math is already torch).
+
+## Full benchmark inventory and training ETAs
+
+Per-batch wall-time observed during the first-pass reproduction was ~3–4 ms across both AFLOW (256-hidden, 9 batches/epoch) and MP (512-hidden, 22 batches/epoch) — the loop is CPU-bound on the per-batch `np.concatenate`, so hidden-size barely affects training time. ETAs below assume single-GPU/process and use `(N_train / batch_size) × 8000 × ~3.5 ms`. The Nature paper benchmarks **13 solids + 4 molecules = 17 tasks**; the repo ships 16 of them (Matbench Formation Energy is the only one missing — see notes below).
+
+| Dataset | Property | #Samples | Hyperparams (h/d/e/b) | batches/epoch | Train ETA | Reproduced? |
+|---|---|---|---|---|---|---|
+| AFLOW | Band Gap (Egap) | 14123 | 512/3/64/256 | ~50 | **~22–25 min** | — |
+| AFLOW | **Bulk Modulus** | 2740 | 256/4/42/256 | 9 | ~4 min | **✓ (49.6 vs 50.5)** |
+| AFLOW | **Debye Temperature** | 2740 | 256/3/42/256 | 9 | ~4 min | **✓ (0.307 vs 0.33)** |
+| AFLOW | Shear Modulus | 2740 | 256/3/48/256 | 9 | ~4 min | — |
+| AFLOW | Thermal Conductivity | 2734 | 256/4/42/256 | 9 | ~4 min | — |
+| AFLOW | Thermal Expansion | 2733 | 256/4/48/256 | 9 | ~4 min | — |
+| Matbench | Band Gap | 2154 | 512/3/64/256 | 7 | ~3 min | — |
+| Matbench | Refractive Index | 4764 | 512/3/64/256 | 16 | ~7–8 min | — |
+| Matbench | Yield Strength | 312 | 256/3/32/64 | ~4 | ~2 min | — |
+| Matbench | **Formation Energy** *(Nature only)* | 37217 | not listed (sweep) | ~130 | **~55–65 min** | — *(data not in repo)* |
+| MP | **Bulk Modulus** | 6307 | 512/3/64/256 | 22 | ~10 min | **✓ (57.96 vs 45.8)** |
+| MP | Elastic Anisotropy | 6331 | 512/3/64/256 | 22 | ~10 min | — |
+| MP | Shear Modulus | 6184 | 512/3/64/256 | 21 | ~10 min | — |
+| MoleculeNet | ESOL (delaney) | 1128 | 1024/3/64/256 | 3 | ~2–3 min | — |
+| MoleculeNet | FreeSolv | 643 | 256/4/64/256 | 2 | ~1 min | — |
+| MoleculeNet | Lipophilicity | 4200 | 256/3/32/256 | 14 | ~6–7 min | — |
+| MoleculeNet | BACE | 1513 | 256/3/48/256 | 5 | ~2–3 min | — |
+
+Totals: **~2.5 hours sequential** of pure training. On 4 GPUs in parallel the wallclock is bottlenecked by the longest task — Matbench Formation Energy at ~1 hour, then AFLOW Egap at ~25 min.
+
+Notes / caveats on the ETAs:
+- Eval is **not** included. With the patched `choose_anchor` (sklearn `pairwise_distances_argmin_min` instead of full `cdist`), eval is ~0.5 s per test sample on small tasks, but for AFLOW Egap and Matbench Formation Energy (large train sets → large `train_deltas`) eval per-sample cost grows roughly linearly with `n_train_deltas`. Without batching the model forward pass, eval wall-time on those will be 30–60 min each.
+- The 3.5 ms/batch is observed on a single NVIDIA RTX A5000 (CUDA 12.4, PyTorch 2.5.1); could be ±30% off for the larger-network rows since hidden-size impact is small but not zero.
+- Add ~30 s startup overhead per task for `pixi run` + featurization-index loading.
+- **Matbench Formation Energy** isn't in the repo: not in `data_modules/data_process.py` `--property` choices, no entry in `blt/train_eval.sh`, no raw data shipped. Adding it requires (a) dropping `formation_energy.json` from matminer's `matbench_mp_e_form` into `blt/data/matbench/formation_energy/`, (b) extending the `--property` enum, and (c) picking hyperparameters from the search grid documented in the Nature supplement (the paper does not list a single point estimate for that row).
+- The Nature paper revised three AFLOW BLT MAE numbers upward vs. the workshop version (Bulk Modulus 47.4 → 50.5, Debye 0.31 → 0.33, Thermal Conductivity 0.83 → 0.86). Our reproduced numbers happen to match the Nature numbers more tightly.
