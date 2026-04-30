@@ -1,0 +1,355 @@
+\DocumentMetadata{lang=en, pdfstandard=ua-2, testphase={phase-III,math,table,title,graphic}}
+\documentclass[10pt]{article}
+\usepackage[top=1.25cm,bottom=1.2cm,left=1.3cm,right=1.3cm]{geometry}
+\usepackage[dvipsnames,svgnames,x11names]{xcolor}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,multirow,colortbl}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{caption}
+\hypersetup{pdfauthor={},pdftitle={}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\definecolor{npjred}{RGB}{219,61,39}
+\definecolor{npjblue}{RGB}{39,137,181}
+\definecolor{rulegray}{RGB}{120,120,120}
+\definecolor{lightgrayrule}{RGB}{150,150,150}
+\definecolor{footerblue}{RGB}{0,132,180}
+\titleformat{\section}{\bfseries\fontsize{16}{18}\selectfont}{}{0pt}{}
+\titleformat{\subsection}{\bfseries\fontsize{12}{14}\selectfont}{}{0pt}{}
+\captionsetup{font={small},labelfont=bf,textfont=normalfont}
+\newcommand{\topheader}{%
+\noindent\begin{minipage}[t]{0.62\textwidth}
+{\fontsize{18}{20}\selectfont \textcolor{npjred}{npj} | computational materials}
+
+{\fontsize{7.5}{9}\selectfont Published in partnership with the Shanghai Institute of Ceramics of the Chinese Academy of Sciences}
+\end{minipage}%
+\begin{minipage}[t]{0.38\textwidth}
+\raggedleft
+{\bfseries\fontsize{16}{18}\selectfont Article}
+\end{minipage}
+
+\vspace{2pt}
+{\color{npjred}\rule{\textwidth}{1.2pt}}
+}
+\newcommand{\doiheader}{%
+\noindent\begin{minipage}[t]{0.75\textwidth}
+{\fontsize{10}{12}\selectfont \textcolor{npjblue}{\href{https://doi.org/10.1038/s41524-025-01808-x}{https://doi.org/10.1038/s41524-025-01808-x}}}
+\end{minipage}%
+\begin{minipage}[t]{0.25\textwidth}
+\raggedleft {\bfseries Article}
+\end{minipage}
+\par\vspace{4pt}{\color{lightgrayrule}\rule{\textwidth}{0.5pt}}
+}
+\newcommand{\footerline}[1]{%
+\vfill
+{\color{lightgrayrule}\rule{\textwidth}{0.5pt}}\\[-1pt]
+\noindent\begin{minipage}[t]{0.78\textwidth}
+{\fontsize{9}{11}\selectfont \textcolor{footerblue}{npj Computational Materials} | (2025)11:345}
+\end{minipage}%
+\begin{minipage}[t]{0.22\textwidth}
+\raggedleft {\fontsize{9}{11}\selectfont #1}
+\end{minipage}
+}
+\begin{document}
+\color{black}
+\topheader
+
+\vspace{36pt}
+\noindent\hfill{\fontsize{10}{12}\selectfont \textcolor{npjblue}{\href{https://doi.org/10.1038/s41524-025-01808-x}{https://doi.org/10.1038/s41524-025-01808-x}}}
+
+{\color{lightgrayrule}\rule{\textwidth}{0.5pt}}
+
+\vspace{10pt}
+{\bfseries\fontsize{34}{36}\selectfont Known Unknowns: Out-of-Distribution\par Property Prediction in Materials and\par Molecules\par}
+
+\vspace{22pt}
+{\color{lightgrayrule}\rule{\textwidth}{0.5pt}}
+
+\vspace{6pt}
+{\bfseries\fontsize{12}{14}\selectfont Nofit Segal$^{1,5}$, Aviv Netanyahu$^{2,5}$, Kevin P. Greenman$^{3,4}$, Pulkit Agrawal$^{2}$ \& Rafael G\'omez-Bombarelli$^{1}$}
+\hfill {\fontsize{9}{11}\selectfont Check for updates}
+
+\vspace{8pt}
+{\color{lightgrayrule}\rule{\textwidth}{0.5pt}}
+
+\vspace{8pt}
+{\fontsize{15}{21}\selectfont Discovery of high-performance materials and molecules requires identifying extremes with property values that fall outside the known distribution. Therefore, the ability to extrapolate to out-of-distribution (OOD) property values is critical for both solid-state materials and molecular design. Our objective is to train predictor models that extrapolate zero-shot to higher ranges than in the training data, given the chemical compositions of solids or molecular graphs and their property values. We propose using a transductive approach to OOD property prediction, achieving improvements in prediction accuracy. In particular, our method improves extrapolative precision by 1.8$\times$ for materials and 1.5$\times$ for molecules, and boosts recall of high-performing candidates by up to 3$\times$. Our method leverages analogical input-target relations in the training and test sets, enabling generalization beyond the training target support, and can be applied to any other material and molecular tasks.\par}
+
+\vspace{18pt}
+\begin{multicols}{2}
+{\fontsize{10.2}{13.8}\selectfont
+Designing new materials and molecules is essential for the development of new technologies. Traditionally, this design process involves extensive experimental iteration or high-throughput methods to screen databases, which are time-consuming and resource-intensive$^{1,2}$. As a result, there is increasing interest in applying machine learning (ML) techniques to accelerate the discovery of materials and molecules with desired properties$^{1–7}$. There is particular interest in property values that are outside the known property value distribution, as these will most likely lead to discovering new materials that will, in turn, unlock new capabilities and technologies.
+
+One strategy for discovering materials and molecules with desired properties is inverse design via conditional generation, where the goal is to create candidates with out-of-distribution (OOD) property values that are absent from the training data$^{2,4,5,8–10}$. A complementary strategy is virtual screening, where a large database of candidate materials is evaluated using predicted properties$^{11–16}$. In this case, the objective is to identify high-performing OOD candidates from a set of known compositions with unknown properties. Screening often involves applying a threshold, either an absolute value or a percentile cutoff, and selecting candidates whose predicted properties exceed it$^{17–19}$. However, both generative and screening approaches commonly face challenges when the target property values lie outside the distribution of the training data$^{4,13,15,20–22}$. Enhancing extrapolative capabilities in property prediction would improve the screening of large candidate spaces in terms of precision by identifying promising compounds and molecules with exceptional properties. This has the potential to streamline the identification process by reducing time and resource expenditure on low-potential candidates, thereby accelerating the discovery of materials and molecules with high synthesis viability.
+
+Extrapolation in materials science can refer to both the domain and the range of the predictive function. Typically, extrapolation is used to refer to generalization in the domain space, i.e., unseen classes of materials, structures, and chemical spaces, e.g. training on metals and predicting ceramics, or training on artificial molecules and predicting natural products. Our notion of extrapolation is different, and we address extrapolation in output material property values, which may or may not correlate with extrapolation in the input materials space.
+
+When OOD generalization is defined with respect to the input materials space, extrapolation often reduces to interpolation$^{21,23}$. This is because test sets tend to remain within the same distribution as the training data representation space$^{23,24}$. This pattern is observed in predictive models using leave-one-cluster-out strategies, as well as in generative approaches aimed at generalizing to structures with varying atomic compositions or sizes$^{24}$. Recently, kernel density estimation has been used to quantify the distance between test samples and the training distribution, providing a way to identify OOD cases$^{25}$.
+
+When OOD generalization is defined with respect to the range of the predictive function, classical machine learning models face significant challenges in extrapolating property predictions through regression. As a result, previous work has shifted toward classifying OOD materials instead,
+}
+\end{multicols}
+
+\vspace{-3pt}
+{\fontsize{7.8}{9.5}\selectfont $^{1}$Materials Science and Engineering, MIT, Cambridge, MA, USA. $^{2}$Electrical Engineering and Computer Science, MIT, Cambridge, MA, USA. $^{3}$Chemical Engineering, Catholic Institute of Technology, Cambridge, MA, USA. $^{4}$Chemistry, Catholic Institute of Technology, Cambridge, MA, USA. $^{5}$These authors contributed equally: Nofit Segal, Aviv Netanyahu. \textcolor{npjblue}{\href{mailto:nuli: pulkitag@mit.edu}{\underline{nuli: pulkitag@mit.edu}}}; \textcolor{npjblue}{\href{mailto:rafagb@mit.edu}{\underline{rafagb@mit.edu}}}}
+
+\footerline{1}
+\newpage
+
+\doiheader
+
+\vspace{8pt}
+\noindent\begin{minipage}[t]{0.38\textwidth}
+{\fontsize{9.3}{12.3}\selectfont \textbf{Fig. 1 | Bilinear Transduction better captures the distribution of out-of-distribution (OOD) values compared with other machine learning methods.} a Probability density functions for OOD materials Debye temperature. Bilinear Transduction (purple) shows the greatest overlap with the ground truth (red), compared with CrabNet, MODNet, and Ridge Regression. b Probability density functions for OOD molecular hydration free energy. Kernel density estimations of predictions from Chemprop, MLP, Random Forest, and Bilinear Transduction (purple) are shown, with Bilinear Transduction most closely matching the ground truth (red).}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.58\textwidth}
+\includegraphics[width=\textwidth]{img-0.jpeg}
+\end{minipage}
+
+\vspace{10pt}
+{\color{rulegray}\rule{\textwidth}{1pt}}
+
+\vspace{8pt}
+\begin{multicols}{2}
+{\fontsize{10.2}{13.8}\selectfont
+setting the OOD threshold within the in-distribution (ID) range to identify high-value samples $^{20}$.
+
+In this work, we focus on predicting property values from materials representations and exploring zero-shot extrapolation, i.e., evaluating the model on unseen property value ranges beyond the training distribution. We adapt the Bilinear Transduction method $^{26}$, which has shown success in extrapolation tasks in other domains, and investigate its effectiveness for property value extrapolation in materials science (Fig. 1). The core idea of Bilinear Transduction is to extrapolate by learning how property values change as a function of material differences rather than predicting these values from new materials. This method does so by reparameterizing the prediction problem. Rather than making property value predictions on a new candidate material, predictions are made based on a known training example and the difference in representation space between the two materials. During inference, property values are predicted similarly - based on a chosen training example and the difference between it and the new sample.
+
+Specifically, for solids, we focus on compositionally driven variation in properties and utilize stoichiometry-based representations. Previous work has explored fixed-length descriptors $^{15,20,27}$ and learned representations$^{13,28,29}$ for composition-based property prediction.
+
+In summary, our main contributions are (1) improving OOD property prediction precision, ensuring a higher percentage of high-potential candidates with desirable properties during database screening (2) a comprehensive evaluation of our approach using common benchmarks, spanning high-throughput computational and experimental datasets for solid-state materials and molecules (3) applying a transductive approach to property prediction. An open-source implementation of MatEx (Materials Extrapolation) is available at \textcolor{npjblue}{\href{https://github.com/learningmatter-mit/matex}{https://github.com/learningmatter-mit/matex}}.
+
+{\bfseries\fontsize{16}{18}\selectfont Results}
+
+{\bfseries\fontsize{14}{16}\selectfont Solids}
+
+We evaluate the extrapolation capability of Bilinear Transduction on three widely used benchmarks for solid materials property prediction, AFLOW, Matbench, and the Materials Project (MP), covering 12 distinct prediction tasks of various classes of materials properties: electronic, mechanical, thermal, etc. The datasets vary in size, ranging from approximately 300 to 14,000 samples. We compare our model's performance against three baseline methods. Some tasks involve predicting the same material property that originates from different sources. E.g., bulk modulus and shear modulus are taken from distinct computational databases, while band gap is sourced from both an experimental and a computational dataset. Experimental data may contain biases introduced by measurement artifacts or experimental conditions, while computational datasets can be influenced by model assumptions or limitations in the simulation methods. This diversity in data sources helps mitigate potential dataset-specific biases.
+
+The solids datasets include material compositions and their property values. AFLOW contains material property values obtained from high-
+
+throughput calculations$^{30}$. Following Kauwe et al.$^{20}$, who evaluated classical ML algorithms on AFLOW, we curate a subset of six properties: band gap, bulk modulus, Debye temperature, shear modulus, thermal conductivity, and thermal expansion, out of which the last four are scaled by applying a base 10 logarithm. \textbf{Matbench} is an automated leaderboard for benchmarking ML algorithms predicting solid material properties$^{13}$. Matbench contains three composition-based regression tasks: experimentally measured band gap$^{14}$, experimentally measured yield strength of steels$^{31}$, calculated formation energy$^{32}$, and calculated refractive index$^{33}$. MP provides materials and their property values derived from high-throughput calculations$^{32}$. Following Wang et al.$^{13}$, we focus on bulk modulus, shear modulus, and the ratio of elastic anisotropy. In cases of duplicate compositions, we retain the entry with the target value corresponding to the lowest formation enthalpy.
+
+We compare with \textbf{Ridge Regression}, the strongest method in Kauwe et al.$^{20}$, who compare classical ML algorithms on OOD property values, and also \textbf{MODNet}$^{13}$ and \textbf{CrabNet}$^{13}$, all of which use stoichiometry as input and are leading models in composition-based property prediction.
+
+Table 1 presents the mean absolute error (MAE) for OOD predictions on solids, showing that Bilinear Transduction consistently outperforms or performs comparably to the baseline methods across tasks. Figure 2 complements this quantitative analysis by visualizing predicted vs. ground truth values for two representative solid-state properties: Bulk Modulus and Debye Temperature. The gray dots represent IDsamples, while red dots indicate OOD samples. While all methods perform well within distribution (see full analysis in Table S1) and while all methods experience a performance drop in OOD, Bilinear Transduction extends predictions more confidently into the OOD regime. Specifically, compared with Ridge Regression, MODNet, and CrabNet, Bilinear Transduction makes more accurate OOD predictions beyond the red horizontal threshold and achieves lower OOD MAE and higher OOD recall, suggesting improved generalization to high-target regions. Bilinear Transduction boosts recall of OOD materials by $3\times$, compared with the best average recall score among the models presented in Table S2.
+
+Additionally, Fig. 1 shows that Bilinear Transduction better captures the shape of the OOD target distribution for Debye Temperature, producing a density estimate that more closely aligns with the ground truth. As a quantitative metric, the Kernel Density Estimation (KDE) overlap reported in Supplementary Material 1.1.3 confirms this improved alignment. Visualizations for additional properties are provided in Figure S5.
+
+In addition, we report model performance on a purely extrapolative task of discovering high-performance extremes: identifying the 30\% of test samples with the highest property values, which we refer to as the \textit{top OOD candidates} (Table 2). This is quantified by \textit{extrapolative precision}, which measures the fraction of true top OOD candidates correctly identified among the model's top predicted OOD candidates. The extrapolative precision score is computed as the ratio of correctly predicted top OOD candidates to the total number of predicted top candidates. The held-out sets
+}
+\end{multicols}
+
+\footerline{2}
+\newpage
+
+\doiheader
+
+\vspace{8pt}
+{\bfseries\fontsize{14}{16}\selectfont Table 1 | Solids OOD mean average prediction error (MAE) and standard error of the mean}
+
+\vspace{6pt}
+\renewcommand{\arraystretch}{1.2}
+\setlength{\tabcolsep}{5pt}
+\begin{tabularx}{\textwidth}{|l|l|c|c|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Property} & \textbf{\#Samples} & \textbf{Ridge Reg.$^{20}$} & \textbf{MODNet$^{15}$} & \textbf{CrabNet$^{13}$} & \textbf{Transduction (Ours)} \\
+\hline
+AFLOW$^{30}$ & Band Gap [eV] & 14123 & $2.59 \pm 0.03$ & $2.65 \pm 0.04$ & $\mathbf{1.47 \pm 0.03}$ & $1.51 \pm 0.04$ \\
+\cline{2-7}
+ & Bulk Modulus [GPa] & 2740 & $74.0 \pm 3.8$ & $93.06 \pm 3.7$ & $59.25 \pm 3.2$ & $\mathbf{50.5 \pm 3.4}$ \\
+\cline{2-7}
+ & Debye Temperature [K] & 2740 & $0.45 \pm 0.03$ & $0.62 \pm 0.03$ & $0.38 \pm 0.02$ & $\mathbf{0.33 \pm 0.02}$ \\
+\cline{2-7}
+ & Shear Modulus [GPa] & 2740 & $0.69 \pm 0.03$ & $0.78 \pm 0.04$ & $0.55 \pm 0.02$ & $\mathbf{0.42 \pm 0.02}$ \\
+\cline{2-7}
+ & Thermal Conductivity [$\frac{W}{mK}$] & 2734 & $1.07 \pm 0.05$ & $1.5 \pm 0.05$ & $0.97 \pm 0.03$ & $\mathbf{0.86 \pm 0.04}$ \\
+\cline{2-7}
+ & Thermal Expansion [$K^{-1}$] & 2733 & $0.44 \pm 0.02$ & $0.47 \pm 0.02$ & $\mathbf{0.37 \pm 0.02}$ & $0.39 \pm 0.02$ \\
+\hline
+Matbench$^{12}$ & Band Gap [eV] & 2154 & $6.37 \pm 0.28$ & $3.26 \pm 0.13$ & $2.70 \pm 0.13$ & $\mathbf{2.54 \pm 0.16}$ \\
+\cline{2-7}
+ & Refractive Index & 4764 & $14.4 \pm 2.0$ & $4.24 \pm 0.48$ & $3.92 \pm 0.5$ & $\mathbf{3.81 \pm 0.49}$ \\
+\cline{2-7}
+ & Yield Strength [MPa] & 312 & $972 \pm 34$ & $731 \pm 82$ & $740 \pm 49$ & $\mathbf{591 \pm 62}$ \\
+\cline{2-7}
+ & Formation Energy [eV/atom] & 37217 & $0.44 \pm 0.02$ & $0.14 \pm 0.01$ & $\mathbf{0.12 \pm 0.0}$ & $0.15 \pm 0.01$ \\
+\hline
+MP$^{32}$ & Bulk Modulus [GPa] & 6307 & $151 \pm 14$ & $60.1 \pm 3.9$ & $57.8 \pm 4.2$ & $\mathbf{45.8 \pm 3.9}$ \\
+\cline{2-7}
+ & Elastic Anisotropy & 6331 & $165 \pm 17$ & $60.0 \pm 4.5$ & $61.4 \pm 4.6$ & $\mathbf{59.8 \pm 4.5}$ \\
+\cline{2-7}
+ & Shear Modulus [GPa] & 6184 & $134.5 \pm 7.2$ & $65.6 \pm 2.5$ & $65.3 \pm 2.8$ & $\mathbf{63.2 \pm 2.6}$ \\
+\hline
+\end{tabularx}
+
+\vspace{10pt}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{img-2.jpeg}
+\caption{In-distribution (ID) and out-of-distribution (OOD) predictions vs. ground truth values of solid materials properties. a Bulk Modulus. b Debye Temperature. When predictions closely match the ground truth values, the points lie near the $y = x$ line, indicating strong correlation and accurate predictions. Ridge Regression $^{30}$, MODNet $^{31}$, CrabNet $^{15}$, and Bilinear Transduction (ours) perform well within the IDrange (gray dots). The red lines mark the boundary between ID and OOD regimes. Bilinear Transduction extends predictions into the OOD regime (red dots), achieving a lower OOD MAE and higher recall.}
+\end{figure}
+
+\vspace{-6pt}
+\begin{multicols}{2}
+{\fontsize{10.2}{13.8}\selectfont
+consist of an IDvalidation set (with property values within the range observed during training) and an OOD test set, each of equal size (see Methods). Since we select the top 30\% of the entire held-out set, this threshold captures 60\% of the OOD test set, as the OOD portion constitutes half of the held-out set. Furthermore, this metric penalizes incorrectly classifying an IDsample as OOD by a factor of 19, reflecting the 95:5 ratio of IDto OOD samples in the overall dataset. We report the mean and standard error of the mean of the 30\% extrapolative precision, obtained via bootstrapping with 50 resampled subsets$^{4}$. See a detailed derivation of this score in Supplementary Material 1.2.3.
+
+{\bfseries\fontsize{14}{16}\selectfont Molecules}
+
+For molecular systems, we used datasets from MoleculeNet, covering four graph-to-property prediction tasks with dataset sizes ranging from 600 to
+
+4200 samples, and benchmarked our approach against three baseline methods.
+
+\textbf{MoleculeNet} includes molecular graphs encoded as SMILES representations$^{33}$ and their property values derived from high-throughput calculations and experimental trials$^{34}$. We focus on physical chemistry and biophysics properties suitable for regression tasks, using four benchmark datasets from MoleculeNet. The ESOL dataset provides measurements of aqueous solubility for small molecules, \textbf{FreeSolv} contains experimental and calculated hydration free energies for small neutral molecules in water, \textbf{Lipophilicity} reports octanol/water distribution coefficients, and \textbf{BACE} includes binding affinities of small molecules to human $\beta$-secretase 1 (BACE-1).
+
+We compare with \textbf{Random Forest (RF)}$^{37}$, a classical ML tree-based method, and \textbf{Multi Layer Perceptron (MLP)} which use RDKit descriptors
+}
+\end{multicols}
+
+\footerline{3}
+
+\newpage
+
+{\footnotesize\color{cyan!50!black}\href{https://doi.org/10.1038/s41524-025-01808-x}{https://doi.org/10.1038/s41524-025-01808-x}}\hfill{\bfseries Article}
+
+\vspace{0.4em}
+\noindent\textbf{Table 2 | Solids Top $30\%$ extrapolative precision, bootstrapped mean and standard error of the mean}
+
+\vspace{0.35em}
+{\footnotesize
+\arrayrulecolor{black!60}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}l l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X@{}}
+\toprule
+\textbf{Dataset} & \textbf{Property} & \textbf{Ridge Reg.$^{20}$} & \textbf{MODNet$^{15}$} & \textbf{CrabNet$^{13}$} & \textbf{Transduction (Ours)}\\
+\midrule
+AFLOW$^{30}$ & Band Gap & 0.16 $\pm$ 0.0 & 0.14 $\pm$ 0.0 & 0.14 $\pm$ 0.0 & \textbf{0.23 $\pm$ 0.0}\\
+& Bulk Modulus & 0.22 $\pm$ 0.01 & 0.29 $\pm$ 0.01 & 0.18 $\pm$ 0.0 & \textbf{0.43 $\pm$ 0.01}\\
+& Debye Temperature & \textbf{0.2 $\pm$ 0.01} & 0.06 $\pm$ 0.0 & 0.07 $\pm$ 0.0 & 0.14 $\pm$ 0.0\\
+& Shear Modulus & \textbf{0.08 $\pm$ 0.0} & \textbf{0.08 $\pm$ 0.0} & 0.06 $\pm$ 0.0 & 0.07 $\pm$ 0.0\\
+& Thermal Conductivity & \textbf{0.16 $\pm$ 0.0} & 0.05 $\pm$ 0.0 & 0.07 $\pm$ 0.0 & 0.14 $\pm$ 0.0\\
+& Thermal Expansion & 0.24 $\pm$ 0.01 & \textbf{0.33 $\pm$ 0.02} & 0.16 $\pm$ 0.0 & 0.24 $\pm$ 0.01\\
+\midrule
+Matbench$^{12}$ & Band Gap & 0.06 $\pm$ 0.0 & 0.11 $\pm$ 0.0 & 0.17 $\pm$ 0.0 & \textbf{0.23 $\pm$ 0.01}\\
+& Refractive Index & 0.25 $\pm$ 0.01 & 0.35 $\pm$ 0.01 & 0.21 $\pm$ 0 & \textbf{0.38 $\pm$ 0.01}\\
+& Yield Strength & 0.02 $\pm$ 0.02 & 0.0 $\pm$ 0.0 & 0.05 $\pm$ 0.02 & \textbf{0.58 $\pm$ 0.02}\\
+& Formation Energy & 0.06 $\pm$ 0.01 & 0.06 $\pm$ 0.0 & 0.05 $\pm$ 0.0 & \textbf{0.11 $\pm$ 0.01}\\
+\midrule
+MP$^{33}$ & Bulk Modulus & 0.22 $\pm$ 0.0 & 0.22 $\pm$ 0.0 & 0.14 $\pm$ 0.0 & \textbf{0.50 $\pm$ 0.02}\\
+& Elastic Anisotropy & 0.01 $\pm$ 0.0 & \textbf{0.09 $\pm$ 0.0} & 0.03 $\pm$ 0.0 & 0.03 $\pm$ 0.0\\
+& Shear Modulus & 0.28 $\pm$ 0.01 & 0.28 $\pm$ 0.01 & 0.21 $\pm$ 0.0 & \textbf{0.49 $\pm$ 0.01}\\
+\bottomrule
+\end{tabularx}
+}
+
+\vspace{1.5em}
+\noindent\textbf{Table 3 | Molecules OOD mean average prediction error (MAE) and standard error of the mean}
+
+\vspace{0.35em}
+{\footnotesize
+\arrayrulecolor{black!60}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}l l c >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X@{}}
+\toprule
+\textbf{Dataset} & \textbf{Property} & \textbf{\#Samples} & \textbf{Chemprop$^{30}$} & \textbf{Random Forest$^{37}$} & \textbf{MLP$^{43}$} & \textbf{Transduction (Ours)}\\
+\midrule
+MoleculeNet$^{36}$ & ESOL [mol/L] & 1128 & 0.47 $\pm$ 0.04 & 0.67 $\pm$ 0.04 & 0.5 $\pm$ 0.04 & \textbf{0.45 $\pm$ 0.04}\\
+& FreeSolv [$\Delta G_{\mathrm{hyd}}$] & 643 & 0.44 $\pm$ 0.03 & 0.42 $\pm$ 0.02 & 0.5 $\pm$ 0.02 & \textbf{0.11 $\pm$ 0.02}\\
+& Lipophilicity [log.D] & 4200 & 0.75 $\pm$ 0.02 & 1.02 $\pm$ 0.02 & 0.9 $\pm$ 0.02 & \textbf{0.74 $\pm$ 0.02}\\
+& BACE binding [IC50] & 1513 & 1.03 $\pm$ 0.06 & 0.93 $\pm$ 0.05 & 0.95 $\pm$ 0.07 & \textbf{0.76 $\pm$ 0.06}\\
+\bottomrule
+\end{tabularx}
+}
+
+\vspace{1.2em}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img-3.jpeg}
+  \caption{ID and OOD Hydration Free Energy predictions versus ground truth values shown as four parity plots for Chemprop, MLP, Random Forest, and Transduction.}
+\end{figure}
+
+{\footnotesize\textbf{Fig. 3 | ID and OOD Hydration Free Energy predictions vs. ground truth values.} While Chemprop $^{30}$, RF, MLP and Bilinear Transduction (ours), perform well within the regime (gray dots), only Bilinear Transduction performs well beyond this range on the OOD test set (red dots).\par}
+
+\vspace{0.8em}
+\begin{multicols}{2}
+\footnotesize
+as input $^{30}$. These serve as ablations of our method, using the same representation with partial structural information as we do. We also compare with Chemprop $^{30}$, a leading method for property prediction from molecular graphs via message-passing. Chemprop learns representations from structural information that is not explicitly available in the descriptor-based representation.
+
+Table 3 presents the MAE for OOD predictions on molecules. Bilinear Transduction consistently outperforms or performs comparably to the baseline methods. Figure 1 demonstrates that Bilinear Transduction produces a prediction for the hydration free energy data distribution that has a greater overlap with the OOD ground truth, indicating better distributional extrapolation. While all methods do well within distribution and experience a performance drop OOD (see full analysis in Table S1), Fig. 3 further shows that Bilinear Transduction extrapolates, whereas the other baselines rarely surpass the boundary marking the beginning of the test range. Bilinear Transduction boosts recall of OOD molecules by $2.5 \times$, calculated by
+
+comparing the average recall score of all models as presented in Table S2. Table 4 shows the fraction of true top OOD candidates correctly identified among the top predicted candidates, reflecting improved precision in retrieving extreme-value molecules.
+
+\section*{Learning Using Analogies}
+The success of transduction in these tasks is related to one of the tenets of chemistry: \textit{similar materials have similar properties}. The transductive approach effectively builds on this idea, by proposing that \textit{similar changes in chemical compounds or molecular structure imply similar changes in properties}. At inference, our approach selects the anchor by minimizing the difference between $\Delta x_{\mathrm{te,an}}$ and $\Delta x_{\mathrm{tr}}$ (see Methods for variable definitions). We demonstrate how these algebraic operations in the embedding space relate to chemical changes as measured in the domain.
+
+For solids, these operations are expressed as elemental changes. Figure 4 demonstrates this in bulk modulus inference of an OOD sample
+\end{multicols}
+
+\vfill
+{\color{cyan!50!black}\footnotesize\textbf{npj Computational Materials}} {\footnotesize| (2025)11:345}\hfill{\footnotesize 4}
+
+\newpage
+
+{\footnotesize\color{cyan!50!black}\href{https://doi.org/10.1038/s41524-025-01808-x}{https://doi.org/10.1038/s41524-025-01808-x}}\hfill{\bfseries Article}
+
+\vspace{0.4em}
+\noindent\textbf{Table 4 | Molecules Top ${30}\%$ extrapolative precision,bootstrapped mean and standard error of the mean}
+
+\vspace{0.35em}
+{\footnotesize
+\arrayrulecolor{black!60}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{}l l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X@{}}
+\toprule
+\textbf{Dataset} & \textbf{Property} & \textbf{Chemprop$^{39}$} & \textbf{Random Forest$^{37}$} & \textbf{MLP$^{43}$} & \textbf{Transduction (Ours)}\\
+\midrule
+MoleculeNet$^{36}$ & ESOL & 0.21 $\pm$ 0.01 & 0.12 $\pm$ 0.0 & 0.16 $\pm$ 0.01 & \textbf{0.33 $\pm$ 0.02}\\
+& FreeSolv & 0.49 $\pm$ 0.01 & 0.32 $\pm$ 0.02 & 0.47 $\pm$ 0.01 & \textbf{0.81 $\pm$ 0.01}\\
+& Lipophilicity & \textbf{0.07 $\pm$ 0.0} & 0.06 $\pm$ 0.0 & \textbf{0.07 $\pm$ 0.0} & \textbf{0.07 $\pm$ 0.0}\\
+& BACE binding & 0.04 $\pm$ 0.0 & \textbf{0.07 $\pm$ 0.0} & 0.05 $\pm$ 0.0 & 0.06 $\pm$ 0.0\\
+\bottomrule
+\end{tabularx}
+}
+
+\vspace{1.2em}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img-4.jpeg}
+  \caption{Analogy-based visualization of bulk modulus predictions showing a PCA plot, a histogram of bulk modulus values, and a compositional analogy illustration.}
+\end{figure}
+
+\vspace{-0.6em}
+\begin{center}
+(a)\hspace{10em}(b)\hspace{10em}(c)
+\end{center}
+
+{\footnotesize\textbf{Fig. 4 | Analogy-based Visualization of Bulk Modulus Predictions.} OOD predictions are based on IDanchors. Together, they form analogies with training pairs. a PCA projection of training and OOD samples. OOD-anchor difference (solid black line) is similar to training pair difference (black dashed line). b Ground truth distribution of bulk modulus values, with the OOD range highlighted in red. c Compositional illustration of analogies. OOD (red) and training point (dark green) differ by one neighboring f-block element. So do the two anchors (blue and light green, respectively).\par}
+
+\vspace{0.8em}
+\begin{multicols}{2}
+\footnotesize
+with stoichiometry $\mathrm{B_4ReU}$. The model selects IDBiHoPd as the anchor, analogous to training anchor BiDyPd and training target $\mathrm{B_4ReTh}$. Specifically, the compositions of these anchors (BiDyPd and BiHoPd), and the targets ($\mathrm{B_4ReTh}$ and $\mathrm{B_4ReU}$), differ by only one neighboring f-block element: Dy $(Z = 66)$ to Ho $(Z = 67)$, and Th $(Z = 90)$ to U $(Z = 92)$. Importantly, the anchor does not need to be compositionally identical or nearly identical to the OOD material. Instead, our approach relies on finding an anchor such that the relationship between the OOD-anchor pair can be approximated by the relationship observed in an analogous training pair. See Supplementary Material 1.1.4 for more examples.
+
+For molecules, these operations manifest as structural similarity. This is notable given that the RDKit descriptor vector used as input lacks detailed structural and connectivity information from the SMILES representation. Figure 5 illustrates this in ESOL inference, with the Maximum Common Structure (MCS) highlighted between the anchor-OOD pair, and the training anchor-target pair. Each pair's structures show high similarity, differing by the addition of a conjugated double bond that extends the molecular backbone. See Supplementary Material 1.1.4 for additional examples.
+
+\section*{Discussion}
+Effective extrapolation via Bilinear Transduction requires that, for a given OOD point, there is an IDanchor that admits an IDdifference between them. Specifically, it requires that there exists a training pair whose
+
+difference in representation space closely matches the difference between the OOD sample and a candidate anchor. Moreover, the bilinear predictor that predicts property values given material representations and their differences must learn a low-rank function in order to extrapolate well $^{26}$. I.e., a material and a material shift must correspond to a property shift that can be captured by a neural network predictor. This requirement underscores the importance of using structured representations, such as physics-based descriptors, that can simplify the complexity of the learned function. More robust anchor selection strategies, such as clustering or metric learning, could enhance performance by improving coverage and low-rank requirements and are promising avenues to explore in the future.
+
+Our approach currently relies solely on stoichiometric features, without incorporating structural information such as atomic positions or geometry. While this enables applications to datasets lacking structural information, it may limit performance on tasks where structure plays a critical role. We view the integration of structural representations such as graphs or 3D-aware embeddings into transductive frameworks as a valuable direction for future work.
+
+Overall, we believe that transductive reasoning offers a promising and underexplored lens for materials and molecular property prediction. The ability to infer properties of new candidates by analogies to existing materials aligns with scientific intuition and may serve as a powerful complement to inductive models, especially in low-data settings.
+\end{multicols}
+
+\vfill
+{\color{cyan!50!black}\footnotesize\textbf{npj Computational Materials}}{\footnotesize| (2025)11:345}\hfill{\footnotesize 5}
+
+\end{document}
