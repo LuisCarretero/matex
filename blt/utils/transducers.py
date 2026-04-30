@@ -3,6 +3,7 @@ import warnings
 warnings.filterwarnings('ignore')
 import random
 from scipy.spatial.distance import cdist
+from sklearn.metrics import pairwise_distances_argmin_min
 from utils.util import get_deltas
 
 
@@ -60,8 +61,13 @@ class DeltaDistributionTransducer(Transducer):
         # closest delta in dist
         curr_deltas = get_deltas(self.train_X[sample_idxs_of_type_obs], curr_obs, self.similarity_type) #size(len(train_X), num_feat)
         if exhaustive_search:
-            distances = cdist(curr_deltas, self.train_deltas, 'euclidean')
-            anchor_idx, delta_idx = np.unravel_index(np.argmin(distances), distances.shape)
+            # Streaming equivalent of: np.unravel_index(argmin(cdist(curr_deltas, self.train_deltas)))
+            # Avoids allocating the full (n_train, n_train_deltas) distance matrix.
+            best_per_anchor, dist_per_anchor = pairwise_distances_argmin_min(
+                curr_deltas, self.train_deltas, metric='euclidean'
+            )
+            anchor_idx = int(np.argmin(dist_per_anchor))
+            delta_idx = int(best_per_anchor[anchor_idx])
             closest_obs = self.train_X[anchor_idx]
             train_analogy_pair_idx = self.train_pairs[delta_idx]
         else:
