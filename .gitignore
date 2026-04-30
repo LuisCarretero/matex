@@ -3,3 +3,13 @@ __pycache__/
 **/__pycache__/
 *.pyc
 wandb/
+
+# Local Claude Code state
+.claude/
+
+# BLT training run artifacts (checkpoints, eval pkls, log files)
+blt/log/
+
+# Preprocessed feature pickles produced by data_modules/data_process.py
+# (raw CSV/JSON inputs and element_properties/*.csv stay tracked)
+blt/data/**/*.pkl
