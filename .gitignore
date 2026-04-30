@@ -13,3 +13,6 @@ blt/log/
 # Preprocessed feature pickles produced by data_modules/data_process.py
 # (raw CSV/JSON inputs and element_properties/*.csv stay tracked)
 blt/data/**/*.pkl
+
+# Baseline run outputs (predictions + metrics pkls produced per task)
+baselines/*/*/*.pkl
