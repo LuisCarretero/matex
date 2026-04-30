@@ -12,15 +12,19 @@ Clone the repository
 ```
 git clone https://github.com/learningmatter-mit/matex.git
 ```
-Create and activate a virtual environment
+Install dependencies with [pixi](https://pixi.sh) (recommended):
+```
+pixi install
+```
+Run commands inside the environment with `pixi run <cmd>` (e.g. `pixi run python blt/main.py`) or activate a shell with `pixi shell`.
+
+Alternatively, use conda + pip:
 ```
 conda create -n blt-matex python=3.9.16
 conda activate blt-matex
-```
-Install requirements
-```
 pip install -r requirements.txt
 ```
+
 #### Environment Setup
 Update hyperparameters in `blt/configs/materials.yml`.
 Run the following command where `path_to_dir` is the parent directory of `matex`.
