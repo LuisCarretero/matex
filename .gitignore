@@ -10,9 +10,12 @@ wandb/
 # BLT training run artifacts (checkpoints, eval pkls, log files)
 blt/log/
 
-# Preprocessed feature pickles produced by data_modules/data_process.py
-# (raw CSV/JSON inputs and element_properties/*.csv stay tracked)
+# Preprocessed feature pickles and intermediate CSVs produced by
+# data_modules/data_process.py (raw JSON inputs and element_properties/*.csv stay tracked)
 blt/data/**/*.pkl
+blt/data/**/train_featurized.csv
+blt/data/**/eval_featurized.csv
+blt/data/**/ood_featurized.csv
 
 # Baseline run outputs (predictions + metrics pkls produced per task)
 baselines/*/*/*.pkl

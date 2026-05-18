@@ -56,7 +56,7 @@ def modnet_preprocess(path, ood_ratio=0.05):
     print(f'Target values in Train: {train_set[args.property].min()} - {train_set[args.property].max()}')
     print(f'Target values in OOD: {ood_set[args.property].min()} - {ood_set[args.property].max()}')
 
-    handle_nan_values(train_set, eval_set, ood_set, args.nan_strategy)
+    handle_nan_values(train_set, eval_set, ood_set, args.nan_strategy, args.dataset_name)
     if args.property == 'band_gap': 
         handle_zero_targets(train_set, eval_set, ood_set, args.property)
     train, eval, ood = extract_and_save_composition(train_moddata, eval_moddata, ood_moddata, train_set, eval_set, ood_set, path)
