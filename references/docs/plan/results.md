@@ -151,6 +151,27 @@ PYTHONPATH=$(pwd)/.. CUDA_VISIBLE_DEVICES=0 PYTHONUNBUFFERED=1 \
 
 Defaults are `--wandb_mode=disabled` and `--eval_every=0`, so existing reproduction commands are unchanged. Artifacts under the run dir now also include `bilinear_eval_evolution.png`, `bilinear_pred_vs_gt_id.png`, `bilinear_pred_vs_gt_ood.png`, and a `wandb/` subdirectory.
 
+## Matbench Band Gap — 2026-05-27 (BLT vs MLP fair verify)
+
+Two `-q premium` sbatch runs (`53487162` BLT, `53487164` MLP), same task / hyperparameters / seed 0, same wandb-instrumented code path (commit `435f0cd`). The only difference is `--model_type`.
+
+| Metric | BLT (bilinear) | MLP | Δ (BLT − MLP) |
+|---|---|---|---|
+| id (eval) MAE [eV] | 0.4589 ± 0.0492 | **0.3595 ± 0.0384** | +0.099 (BLT worse) |
+| OOD MAE [eV] | **2.0264 ± 0.1046** | 2.2014 ± 0.1077 | −0.175 (BLT better) |
+| wall time | 21:37 | 8:39 | BLT ~2.5× slower |
+| wandb | [qvzdvzae](https://wandb.ai/luis-carretero-eth-zurich/matex-blt/runs/qvzdvzae) | [9bak05g1](https://wandb.ai/luis-carretero-eth-zurich/matex-blt/runs/9bak05g1) | |
+
+**Headline finding** — the paper's central claim reproduces cleanly on this fair pair: bilinear transduction trades ~0.1 eV id MAE for ~0.18 eV better OOD MAE, because the predictor sees training-time deltas. MLP overfits id (~0.36 id MAE, lowest of any run we've done) but cannot extrapolate.
+
+**Training dynamics differ** between the two:
+- MLP: both id and ood plateau within ~1000 epochs and barely move for the remaining 7000. id 0.45 → 0.36 → flat, ood 2.55 → 2.20 → flat.
+- BLT: id is flat from epoch 200; ood drifts *up* (1.72 → 2.03) over the run as the model specializes. The third BLT run in a row is bit-identical to the prior two — RNG isolation around `--eval_every=200` is rock-solid.
+
+**OOD pred-vs-gt scatter** for both shows predictions saturate around 3-4 eV while ground truth extends to ~12 eV. Neither model extrapolates; BLT just gets closer to the diagonal in the saturated region.
+
+BLT is the third bit-identical reproduction of `id MAE 0.4589 ± 0.0492` and `ood MAE 2.0264 ± 0.1046`.
+
 ## Caveats / open items
 
 1. **Single seed** for AFLOW tasks (`seed: 0`). MP Bulk has been re-run on three seeds (above); AFLOW Bulk and AFLOW Debye still rely on a single seed.
