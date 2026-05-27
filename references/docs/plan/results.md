@@ -118,6 +118,39 @@ Run on `2026-05-18` from commit `4dc7f7b` on a single NVIDIA A100-PCIE-40GB (NER
 - Required a one-line fix to `data_modules/data_process.py` (`handle_nan_values` was missing the `dataset_name` arg in the modnet path — every matbench/aflow/mp preprocess crashed without it; fixed in commit `456bcf9`).
 - Artifacts: `$SCRATCH/matex/blt_log/matbench/band_gap/magpie_subtraction_bilinear_hsize512_hnum3_esize64_bsize256/26-05-18_13-24-26/`.
 
+## Matbench Band Gap — 2026-05-27 (4×A100 sbatch, wandb + periodic eval)
+
+Same task / hyperparameters / seed as the 2026-05-18 run, re-trained on a `-q premium` 4×A100 node (slurm `53485552`, ran on 1 GPU) after wiring up `wandb` logging and periodic id/ood eval every 200 epochs. Commit `1453625`.
+
+| Metric | Our BLT (2026-05-27) | Our BLT (2026-05-18) | Paper BLT |
+|---|---|---|---|
+| OOD MAE [eV] | **2.0264 ± 0.1046** | 2.0264 ± 0.1046 | 2.54 ± 0.16 |
+| In-dist (eval) MAE [eV] | **0.4589 ± 0.0492** | 0.4589 ± 0.0492 | 0.49 ± 0.05 |
+
+**Bit-for-bit reproduction** of the prior run. The new code path snapshots NumPy / Python / Torch RNG before each periodic eval and restores it after, so training is byte-identical to the no-wandb path. The 40 mid-training periodic evals at epochs 200, 400, …, 8000 add ~20 min to a ~80 min training job.
+
+### Training dynamics (new — only available with `--eval_every`)
+
+- **id MAE** is flat ≈ 0.42–0.50 from epoch 200 onward — the model converges within the first ~few hundred epochs on the id distribution and then jitters, with no further trend.
+- **ood MAE** starts low (~1.72 at epoch 200), drifts up through ~1.93 by epoch 1200, and oscillates around 1.95–2.05 for the remaining 6800 epochs. The model gets *worse* on OOD as it specializes on id — exactly the failure mode the paper discusses (overconfidence in extrapolation).
+- The ood pred-vs-gt scatter visualizes this directly: ground-truth band gaps extend to ~12 eV but predictions saturate around 3 eV — the model cannot extrapolate beyond its training-distribution support.
+- Wandb run: <https://wandb.ai/luis-carretero-eth-zurich/matex-blt/runs/stsq03u7>
+
+### How to enable
+
+```bash
+PYTHONPATH=$(pwd)/.. CUDA_VISIBLE_DEVICES=0 PYTHONUNBUFFERED=1 \
+  pixi run python main.py \
+    --dataset_name=matbench --prop_type=band_gap --data_filename=magpie \
+    --hidden_layer_size=512 --hidden_depth=3 --embedding_dim=64 --batch_size=256 \
+    --seed=0 \
+    --eval_every=200 \
+    --wandb_mode=online \
+    --wandb_project=matex-blt
+```
+
+Defaults are `--wandb_mode=disabled` and `--eval_every=0`, so existing reproduction commands are unchanged. Artifacts under the run dir now also include `bilinear_eval_evolution.png`, `bilinear_pred_vs_gt_id.png`, `bilinear_pred_vs_gt_ood.png`, and a `wandb/` subdirectory.
+
 ## Caveats / open items
 
 1. **Single seed** for AFLOW tasks (`seed: 0`). MP Bulk has been re-run on three seeds (above); AFLOW Bulk and AFLOW Debye still rely on a single seed.
