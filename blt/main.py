@@ -80,7 +80,7 @@ def run_supervised_training_and_eval(args, logdir='log'):
     torch.manual_seed(seed)
 
     # Model
-    num_epochs = v['model']['num_epochs']
+    num_epochs = v['model']['num_epochs'] if args.num_epochs is None else args.num_epochs
     use_dom_know_train = v['model']['use_dom_know_train']
     use_dom_know_eval = v['model']['use_dom_know_eval']
     store_train_deltas = v['model']['store_train_deltas']
@@ -241,6 +241,8 @@ if __name__ == "__main__":
     parser.add_argument('--wandb_name', default=None)
     parser.add_argument('--eval_every', type=int, default=0,
                         help="Run id+ood eval every N epochs during training (0 = off; final eval still runs)")
+    parser.add_argument('--num_epochs', type=int, default=None,
+                        help="Override num_epochs in materials.yml (e.g. for smoketests)")
     args = parser.parse_args()
 
     run_supervised_training_and_eval(args)
