@@ -123,7 +123,7 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
         if (epoch+1) % 2000 == 0 and checkpoint_path:
             models_save(model, logpath=osp.join(checkpoint_path, str(epoch)+'.pt'))
 
-        log = {'epoch': epoch+1, 'train/loss': epoch_loss}
+        log = {'misc/epoch': epoch+1, 'train/mae': epoch_loss}
 
         # Periodic id/ood eval (RNG-isolated so the no-wandb path remains byte-identical)
         if eval_every and periodic_eval_kwargs and ((epoch+1) % eval_every == 0 or (epoch+1) == num_epochs):
@@ -141,10 +141,10 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
             eval_history['ood_mae'].append(ood_preds['mae'])
             eval_history['ood_sem'].append(ood_preds['sem'])
             log.update({
-                'eval/id_mae': id_preds['mae'],
-                'eval/id_sem': id_preds['sem'],
-                'eval/ood_mae': ood_preds['mae'],
-                'eval/ood_sem': ood_preds['sem'],
+                'val/id_mae': id_preds['mae'],
+                'val/id_sem': id_preds['sem'],
+                'val/ood_mae': ood_preds['mae'],
+                'val/ood_sem': ood_preds['sem'],
             })
             print(f'[periodic-eval epoch {epoch+1}] id MAE {id_preds["mae"]:.4f} ± {id_preds["sem"]:.4f}  ood MAE {ood_preds["mae"]:.4f} ± {ood_preds["sem"]:.4f}')
 
@@ -174,10 +174,6 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
         plt.close()
         if wandb_run is not None:
             import wandb
-            wandb_run.log({'plots/eval_evolution': wandb.Image(evo_png)})
-
-    if wandb_run is not None:
-        import wandb
-        wandb_run.log({'plots/train_loss': wandb.Image(losses_png)})
+            wandb_run.log({'plots/final/eval_evolution': wandb.Image(evo_png)})
 
     return model, np.array(train_deltas).reshape(-1, len(obs_idxs))

@@ -10,6 +10,8 @@
 #SBATCH -J blt_bandgap_wandb
 #SBATCH -o slurm-%j.out
 
+# Reproduce matbench band_gap. Pass MODEL_TYPE=bilinear (default) or mlp via
+# sbatch --export=ALL,MODEL_TYPE=mlp,RUN_NAME=...
 set -euo pipefail
 
 REPO=/global/u1/l/luisc440/workspace/OOD-BT/matex
@@ -19,10 +21,15 @@ export PYTHONUNBUFFERED=1
 export PYTHONPATH="$REPO"
 export CUDA_VISIBLE_DEVICES=0
 
+MODEL_TYPE=${MODEL_TYPE:-bilinear}
+RUN_NAME=${RUN_NAME:-bandgap_${MODEL_TYPE}_8000ep_seed0}
+
 echo "[host] $(hostname)  [date] $(date)  [git] $(git -C "$REPO" rev-parse HEAD)"
+echo "[model_type] $MODEL_TYPE  [run_name] $RUN_NAME"
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || true
 
 pixi run --manifest-path "$REPO" python main.py \
+    --model_type="$MODEL_TYPE" \
     --dataset_name=matbench \
     --prop_type=band_gap \
     --data_filename=magpie \
@@ -34,4 +41,4 @@ pixi run --manifest-path "$REPO" python main.py \
     --eval_every=200 \
     --wandb_mode=online \
     --wandb_project=matex-blt \
-    --wandb_name=bandgap_8000ep_seed0_wandb-repro
+    --wandb_name="$RUN_NAME"

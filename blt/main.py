@@ -215,8 +215,8 @@ def run_supervised_training_and_eval(args, logdir='log'):
         wandb_run.summary['final/ood_mae'] = eval_samples_ood['mae']
         wandb_run.summary['final/ood_sem'] = eval_samples_ood['sem']
         wandb_run.log({
-            'plots/pred_vs_gt_id': wandb.Image(id_scatter),
-            'plots/pred_vs_gt_ood': wandb.Image(ood_scatter),
+            'plots/final/pred_vs_gt_id': wandb.Image(id_scatter),
+            'plots/final/pred_vs_gt_ood': wandb.Image(ood_scatter),
         })
         wandb_run.finish()
 
