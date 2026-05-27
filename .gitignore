@@ -1,4 +1,4 @@
-.pixi/
+.pixi
 __pycache__/
 **/__pycache__/
 *.pyc
@@ -7,8 +7,13 @@ wandb/
 # Local Claude Code state
 .claude/
 
-# BLT training run artifacts (checkpoints, eval pkls, log files)
-blt/log/
+# BLT training run artifacts (checkpoints, eval pkls, log files).
+# No trailing slash so the pattern also matches the symlink at blt/log
+# pointing to $SCRATCH/matex/blt_log.
+blt/log
+
+# Slurm job stdout
+*.out
 
 # Preprocessed feature pickles and intermediate CSVs produced by
 # data_modules/data_process.py (raw JSON inputs and element_properties/*.csv stay tracked)
