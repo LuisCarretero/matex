@@ -103,6 +103,21 @@ Paper: **45.8 ± 3.9**.
 
 The reboot mid-session interrupted OOD eval for seeds 1 and 2 after training and val eval had completed; resumed via `--model_path` (eval-only). Resume changes the transducer's RNG draw, which is why the val MAE differs slightly between the first run and the resumed eval — same effect we'd already verified harmless on AFLOW Bulk (OOD MAE matched to two decimals: 49.6107 unpatched vs 49.5878 patched).
 
+## Matbench Band Gap — 2026-05-18 (A100, single seed)
+
+Run on `2026-05-18` from commit `4dc7f7b` on a single NVIDIA A100-PCIE-40GB (NERSC Perlmutter interactive node; CUDA 12.4, PyTorch 2.5.1, Python 3.9). Paper hyperparameters from `blt/train_eval.sh` (`--hidden_layer_size=512 --hidden_depth=3 --embedding_dim=64 --batch_size=256`, 8000 epochs, seed 0). Preprocessed with `--nan_strategy=drop_feat` → 4144 train / 230 eval / 230 OOD.
+
+| Metric | Our BLT | Paper BLT | Within SEM? |
+|---|---|---|---|
+| OOD MAE [eV] | **2.0264 ± 0.1046** | 2.54 ± 0.16 | ✓ (better, ≈2.7σ low) |
+| In-dist (eval) MAE [eV] | 0.4589 ± 0.0492 | 0.49 ± 0.05 | ✓ |
+
+- `±` is per-test-sample SEM (same convention as paper Table 1), not seed variance.
+- Single seed only; not yet re-run for seed variance.
+- TPR / precision@30 not computed for this run — `main.py` writes only `results.txt` (val + OOD MAE). Run `blt.utils.aggregate_results` for those (paper BLT: TPR 0.009, precision@30 0.20).
+- Required a one-line fix to `data_modules/data_process.py` (`handle_nan_values` was missing the `dataset_name` arg in the modnet path — every matbench/aflow/mp preprocess crashed without it; fixed in commit `456bcf9`).
+- Artifacts: `$SCRATCH/matex/blt_log/matbench/band_gap/magpie_subtraction_bilinear_hsize512_hnum3_esize64_bsize256/26-05-18_13-24-26/`.
+
 ## Caveats / open items
 
 1. **Single seed** for AFLOW tasks (`seed: 0`). MP Bulk has been re-run on three seeds (above); AFLOW Bulk and AFLOW Debye still rely on a single seed.
