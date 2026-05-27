@@ -67,18 +67,21 @@ def define_model(model_type, obs_size, ac_size, hidden_layer_size, feature_dim, 
     return model
 
 
-def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, transducer=None, use_dom_know_eval=False, eval_type=''):
+def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, transducer=None,
+                    use_dom_know_eval=False, eval_type='', verbose=True, write_results=True):
     test_X, test_Y, test_formula = eval_dataset['test_X'], eval_dataset['test_Y'], eval_dataset['test_formula']
     errors = []
     preds = {'preds': [], 'gt': test_Y, 'anchor_idxs': [], 'train_analogy_pair_idx': []}
     tmp_preds = {'preds': [], 'gt': test_Y, 'anchor_idxs': [], 'train_analogy_pair_idx': []}
     for k in range(len(test_X)):
-        print(f'{eval_type} ', k+1, '/', len(test_X))
+        if verbose:
+            print(f'{eval_type} ', k+1, '/', len(test_X))
         curr_test = test_X[k][None]
         gt_output = test_Y[k]
         #get delta
         if model_type in ['nn', 'bilinear', 'bilinear_scalardelta']:
-            closest_train, anchor_idx, train_analogy_pair_idx = transducer.choose_anchor(curr_test, test_formula[k], use_dom_know_eval, return_anchor=True)
+            closest_train, anchor_idx, train_analogy_pair_idx = transducer.choose_anchor(
+                curr_test, test_formula[k], use_dom_know_eval, return_anchor=True, verbose=verbose)
             preds['anchor_idxs'].append(anchor_idx)
             preds['train_analogy_pair_idx'].append(train_analogy_pair_idx)
             tmp_preds['anchor_idxs'].append(anchor_idx)
@@ -94,8 +97,9 @@ def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, tr
         preds['preds'].append(y)
         loss = np.linalg.norm(gt_output - y)
         errors.append(loss)
-        print('gt ', gt_output, ' pred ', y, ' loss ', np.round(loss,3))
-        if k % 50 == 0:
+        if verbose:
+            print('gt ', gt_output, ' pred ', y, ' loss ', np.round(loss,3))
+        if write_results and k % 50 == 0:
             tmp_preds['preds'] = np.array(preds['preds'])
             save_pkl(preds, logpath=osp.join(logdir, model_type+f'_{eval_type}_tmp'+'.pkl'))
 
@@ -103,13 +107,17 @@ def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, tr
     mean = round(np.mean(errors),4)
     sem = round(np.std(errors, ddof=1) / np.sqrt(np.size(errors)),4)
     result_line = f'MAE: {mean} ± {sem}\n'
-    print(result_line)
-    results_path = os.path.join(logdir, 'results.txt')
-    with open(results_path, 'a') as f:
-        f.write(f"Evaluation Type: {eval_type}\n")
-        f.write(result_line)
-        f.write('\n')
+    if verbose:
+        print(result_line)
+    if write_results:
+        results_path = os.path.join(logdir, 'results.txt')
+        with open(results_path, 'a') as f:
+            f.write(f"Evaluation Type: {eval_type}\n")
+            f.write(result_line)
+            f.write('\n')
     preds['preds'] = np.array(preds['preds'])
+    preds['mae'] = mean
+    preds['sem'] = sem
     return preds
 
 

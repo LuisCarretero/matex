@@ -14,9 +14,9 @@ class Transducer():
 
 class DeltaDistributionTransducer(Transducer):
     """ samples stored/computed training deltas and gets anchor point at inference"""
-    def __init__(self, samples, train_deltas, skew, n_approx, sample_deltas, sample_train, type_idxs, similarity_type, **kwargs):
+    def __init__(self, samples, train_deltas, skew, n_approx, sample_deltas, sample_train, type_idxs, similarity_type, verbose=True, **kwargs):
         super().__init__(samples=samples)
-       
+
         # compute deltas once from training samples
         self.train_X = samples['train_X']
         self.train_Y = samples['train_Y']
@@ -24,16 +24,19 @@ class DeltaDistributionTransducer(Transducer):
         self.type_idxs = type_idxs
         self.similarity_type = similarity_type
         self.sample_train = sample_train
+        self.verbose = verbose
 
         # deltas that were actually used in training
         if sample_deltas:
-            print('sampling train deltas transducer')
+            if verbose:
+                print('sampling train deltas transducer')
             self.train_deltas = train_deltas[random.sample(range(train_deltas.shape[0]), train_deltas.shape[0]//10)] #sample from train deltas
         else:
             self.train_deltas = train_deltas
 
         # approx training  deltas
-        print('approximating deltas')
+        if verbose:
+            print('approximating deltas')
         if len(train_deltas) == 0: # not stored during training
             t1_idx = np.random.randint(len(self.train_X), size=(n_approx,)) # Indices of A
             t2_idx = np.random.randint(len(self.train_X), size=(n_approx,)) # Indices of sample B
@@ -48,7 +51,7 @@ class DeltaDistributionTransducer(Transducer):
             self.train_pairs = np.stack([t1_idx, t2_idx], axis=1)
     
     
-    def choose_anchor(self, curr_obs, curr_formula, use_dom_know_eval=False, return_anchor=False, exhaustive_search=True, eps_percentile=10):
+    def choose_anchor(self, curr_obs, curr_formula, use_dom_know_eval=False, return_anchor=False, exhaustive_search=True, eps_percentile=10, verbose=True):
         """return idx for training sample that gives delta closest to training deltas"""
 
         if use_dom_know_eval: # priviledged eval
@@ -80,7 +83,8 @@ class DeltaDistributionTransducer(Transducer):
                 if min_dist <= delta_eps:
                     break
 
-        print('test material ', curr_formula, ' anchor material ', self.formula_X[anchor_idx], '\n train pair analogy ', self.formula_X[train_analogy_pair_idx])
+        if verbose:
+            print('test material ', curr_formula, ' anchor material ', self.formula_X[anchor_idx], '\n train pair analogy ', self.formula_X[train_analogy_pair_idx])
         
         if return_anchor:
             return closest_obs, anchor_idx, train_analogy_pair_idx
@@ -88,9 +92,10 @@ class DeltaDistributionTransducer(Transducer):
 
 
 def define_transducer(samples, train_deltas, skew, n_approx, sample_deltas=False, sample_train=False, \
-                      type_idxs=None, similarity_type=None):
+                      type_idxs=None, similarity_type=None, verbose=True):
     """return instance of transducer class"""
     transducer = DeltaDistributionTransducer(samples=samples, train_deltas=train_deltas, skew=skew, \
                                              n_approx=n_approx, sample_deltas=sample_deltas, \
-                                             sample_train=sample_train, type_idxs=type_idxs, similarity_type=similarity_type)
+                                             sample_train=sample_train, type_idxs=type_idxs,
+                                             similarity_type=similarity_type, verbose=verbose)
     return transducer
