@@ -2,6 +2,7 @@ import torch.optim as optim
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 import os
 import os.path as osp
 import random
@@ -10,6 +11,7 @@ warnings.filterwarnings('ignore')
 
 from utils.util import models_save, get_deltas, AvgMeter, eval_supervised
 from utils.transducers import define_transducer
+from utils.spectra import factor_spectra
 
 
 def _snapshot_rng():
@@ -61,10 +63,11 @@ def _periodic_eval(model, model_type, logdir, samples, train_deltas_acc, similar
 def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
                      num_epochs=500, batch_size=32, checkpoint_path=None, store_train_deltas=True,
                      similarity_type=None, wandb_run=None, eval_every=0,
-                     periodic_eval_kwargs=None):
+                     periodic_eval_kwargs=None, spectra_every=0, spectra_kwargs=None):
     """train model. If wandb_run is set, logs train/loss per epoch. If eval_every>0 and
     periodic_eval_kwargs is provided, runs id+ood eval every N epochs (snapshot transducer,
-    RNG-isolated)."""
+    RNG-isolated). If spectra_every>0 and spectra_kwargs is provided, logs the bilinear trunks'
+    realized rank every N epochs to trace its evolution during training."""
 
     X, Y = dataset['train_X'], dataset['train_Y']
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -72,6 +75,8 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
     optimizer = optim.Adam(list(model.parameters()))
     epoch_losses = []
     eval_history = {'epoch': [], 'id_mae': [], 'id_sem': [], 'ood_mae': [], 'ood_sem': []}
+    spectra_records = []
+    spectra_history = {'epoch': [], 'F_pr': [], 'F_eff': [], 'G_pr': [], 'G_eff': []}
     idxs = np.array(range(len(X)))
     num_batches = len(idxs) // batch_size
     print('num_epochs', num_epochs, 'num_batches', num_batches)
@@ -148,6 +153,32 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
             })
             print(f'[periodic-eval epoch {epoch+1}] id MAE {id_preds["mae"]:.4f} ± {id_preds["sem"]:.4f}  ood MAE {ood_preds["mae"]:.4f} ± {ood_preds["sem"]:.4f}')
 
+        # Periodic factor-spectra: realized rank of the bilinear trunks (bilinear models only).
+        # factor_spectra uses a fixed local RNG, so it perturbs no global state and scores the same
+        # anchors/deltas each call — the curve isolates weight evolution from sampling noise.
+        if spectra_every and spectra_kwargs and 'bilinear' in model_type and \
+                ((epoch+1) % spectra_every == 0 or (epoch+1) == num_epochs):
+            fs = factor_spectra(model, **spectra_kwargs)
+            spectra_records.append({'epoch': epoch+1, **fs})
+            f_stat, g_stat = fs['F_obs_trunk'], fs['G_delta_trunk']
+            spectra_history['epoch'].append(epoch+1)
+            spectra_history['F_pr'].append(f_stat['participation_ratio'])
+            spectra_history['F_eff'].append(f_stat['effective_rank'])
+            spectra_history['G_pr'].append(g_stat['participation_ratio'])
+            spectra_history['G_eff'].append(g_stat['effective_rank'])
+            log.update({
+                'spectra/F_participation_ratio': f_stat['participation_ratio'],
+                'spectra/F_effective_rank': f_stat['effective_rank'],
+                'spectra/F_stable_rank': f_stat['stable_rank'],
+                'spectra/G_participation_ratio': g_stat['participation_ratio'],
+                'spectra/G_effective_rank': g_stat['effective_rank'],
+                'spectra/G_stable_rank': g_stat['stable_rank'],
+                'spectra/sigp_min': fs['sigp_proxy']['sigma_min'],
+            })
+            print(f'[spectra epoch {epoch+1}] F PR {f_stat["participation_ratio"]:.2f} '
+                  f'eff {f_stat["effective_rank"]:.2f} | G PR {g_stat["participation_ratio"]:.2f} '
+                  f'eff {g_stat["effective_rank"]:.2f}')
+
         if wandb_run is not None:
             wandb_run.log(log, step=epoch+1)
 
@@ -175,5 +206,25 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
         if wandb_run is not None:
             import wandb
             wandb_run.log({'plots/final/eval_evolution': wandb.Image(evo_png)})
+
+    # Realized-rank evolution of the bilinear trunks over training
+    if spectra_history['epoch']:
+        with open(os.path.join(logdir, model_type+'_spectra_history.json'), 'w') as f:
+            json.dump(spectra_records, f, indent=2)
+        plt.figure()
+        plt.plot(spectra_history['epoch'], spectra_history['F_pr'], marker='o', label='F obs_trunk (PR)')
+        plt.plot(spectra_history['epoch'], spectra_history['G_pr'], marker='s', label='G delta_trunk (PR)')
+        plt.plot(spectra_history['epoch'], spectra_history['F_eff'], marker='^', ls='--', label='F (eff-rank)')
+        plt.plot(spectra_history['epoch'], spectra_history['G_eff'], marker='v', ls='--', label='G (eff-rank)')
+        plt.xlabel('epoch')
+        plt.ylabel('realized rank')
+        plt.legend()
+        plt.title('bilinear trunk realized rank over training')
+        spectra_png = os.path.join(logdir, model_type+'_spectra_evolution.png')
+        plt.savefig(spectra_png)
+        plt.close()
+        if wandb_run is not None:
+            import wandb
+            wandb_run.log({'plots/final/spectra_evolution': wandb.Image(spectra_png)})
 
     return model, np.array(train_deltas).reshape(-1, len(obs_idxs))

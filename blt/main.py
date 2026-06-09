@@ -43,6 +43,7 @@ def _make_wandb_run(args, logdir, config):
         'seed': args.seed if args.seed is not None else config['env']['seed'],
         'num_epochs': config['model']['num_epochs'],
         'eval_every': args.eval_every,
+        'spectra_every': args.spectra_every,
     }
     try:
         return wandb.init(project=args.wandb_project, name=name, mode=mode, dir=wandb_dir, config=flat)
@@ -153,12 +154,20 @@ def run_supervised_training_and_eval(args, logdir='log'):
                 type_idxs=type_idxs,
                 use_dom_know_eval=use_dom_know_eval,
             )
+        spectra_kwargs = None
+        if args.spectra_every > 0 and 'bilinear' in args.model_type:
+            spectra_kwargs = dict(
+                train_X=samples['train_X'], train_Y=samples['train_Y'], obs_idxs=obs_idxs,
+                similarity_type=args.similarity_type, skew=skew,
+                sample=args.spectra_sample, device=device, seed=seed,
+            )
         predictor, train_deltas = train_supervised(
             args.model_type, samples, predictor, logdir, obs_idxs, skew, num_epochs,
             args.batch_size, checkpoint_path=logdir, store_train_deltas=store_train_deltas,
             similarity_type=args.similarity_type,
             wandb_run=wandb_run, eval_every=args.eval_every,
             periodic_eval_kwargs=periodic_eval_kwargs,
+            spectra_every=args.spectra_every, spectra_kwargs=spectra_kwargs,
         )
         models_save(predictor, logpath=predictor_path) # save learned models in logdir for later evaluation
         save_pkl(train_deltas, logpath=train_deltas_path) # save train_deltas for further evaluation.
@@ -241,6 +250,10 @@ if __name__ == "__main__":
     parser.add_argument('--wandb_name', default=None)
     parser.add_argument('--eval_every', type=int, default=0,
                         help="Run id+ood eval every N epochs during training (0 = off; final eval still runs)")
+    parser.add_argument('--spectra_every', type=int, default=0,
+                        help="Log bilinear-trunk realized rank every N epochs (0 = off; bilinear models only)")
+    parser.add_argument('--spectra_sample', type=int, default=4096,
+                        help="Anchors/deltas drawn per spectra snapshot (capped at train size)")
     parser.add_argument('--num_epochs', type=int, default=None,
                         help="Override num_epochs in materials.yml (e.g. for smoketests)")
     args = parser.parse_args()
