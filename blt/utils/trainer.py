@@ -108,7 +108,7 @@ def train_supervised(model_type, dataset, model, logdir, obs_idxs, skew, \
             if model_type == 'mlp':
                 y1_pred = model(t1_X)
                 loss = torch.mean(torch.linalg.norm(y1_pred - t1_Y, dim=-1))
-            elif 'bilinear' in model_type:
+            elif 'bilinear' in model_type or model_type == 'transduction':
                 deltas = get_deltas(t1_X, t2_X, similarity_type)
                 if store_train_deltas:
                     delta_idx = np.random.randint(len(deltas), size=(1,))[0] # store 1 delta every batch

@@ -60,6 +60,22 @@ class BilinearPredictor(nn.Module):
         return pred
 
 
+class TransductionPredictor(nn.Module):
+    """Plain-MLP transduction: MLP([obs ‖ delta]).
+       BLT ablation — same (anchor, delta) reparametrization and transducer-based eval as
+       BilinearPredictor, but an unstructured feed-forward readout instead of the bilinear
+       low-rank form, so an MLP / Transduction / BLT comparison isolates the bilinear structure
+       as the lone variable. delta has the same dim as obs (subtraction), so the trunk input is
+       2*input_dim."""
+    def __init__(self, input_dim, output_dim, hidden_dim, hidden_depth):
+        super().__init__()
+        self.trunk = mlp(2 * input_dim, hidden_dim, output_dim, hidden_depth)
+        self.apply(weight_init)
+
+    def forward(self, obs, deltas):
+        return self.trunk(torch.cat([obs, deltas], dim=-1))
+
+
 class BilinearPredictorScalarDelta(nn.Module):
     """Bilinear Transduction, scalar delta
        dot product of non linear embeddings of data point and data point difference (delta)

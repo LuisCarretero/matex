@@ -179,3 +179,87 @@ BLT is the third bit-identical reproduction of `id MAE 0.4589 ± 0.0492` and `oo
 3. **Ridge OOD MAE on AFLOW** differs from paper (90 vs 74). The paper's exact alpha and Kauwe-pre-processing variant aren't documented in this repo; sweeping alpha narrowed but didn't fully close the gap. For MP Bulk our Ridge actually beats the paper's number (94 vs 151) — the same setup ambiguity in the other direction.
 4. **Precision@30** absolute numbers differ from paper across the board, but BLT > Ridge ordering matches in every row.
 5. **MP Bulk Modulus BLT mean is ~2σ above paper.** Three-seed mean 55.3 vs paper 45.8. The best-of-three (50.05) is within a paper-SEM, suggesting seed/hardware variance accounts for most of the gap. The AFLOW results suggest the training pipeline and method are correct.
+
+## Native 3-way head comparison: MLP vs Transduction vs BLT — 2026-06-11
+
+Run on `2026-06-11` (commit `1ec02b4` + the transduction head) on a NERSC Perlmutter
+**interactive 4×A100-40GB** node (job `54323065`, ~1h40 wall for all 22 runs). **Basis A**:
+every head at the task's published depth `k` / width `n`; BLT keeps its two native trunks +
+embedding `m`, Transduction is a single `MLP([obs‖δ])`, MLP is per-sample — all 8000 epochs,
+seed 0, `subtraction` similarity, `skew: right`. The Transduction head was added to this repo
+(`TransductionPredictor` in `blt/utils/networks.py`); it reuses matex's native pairing +
+transducer anchor-search, so only the readout differs from BLT. See plan in
+`docs/plan/three_way_native.md`.
+
+8 tasks × 3 heads − 2 already-native (Matbench band gap MLP+BLT) = **22 runs**. Per-test SEM
+(same convention as paper Table 1).
+
+| Task | unit | MLP ID | Trans ID | BLT ID | MLP **OOD** | Trans **OOD** | **BLT OOD** |
+|---|---|---|---|---|---|---|---|
+| Matbench band gap | eV | **0.359** | 0.367 | 0.459 | 2.201 | 2.061 | **2.026** |
+| AFLOW Egap | eV | **0.633** | 0.638 | 0.812 | 2.838 | 2.166 | **1.318** |
+| AFLOW bulk modulus | GPa | **10.92** | 11.71 | 13.23 | 62.68 | 59.51 | **47.47** |
+| MP bulk modulus | GPa | **15.31** | 15.59 | 21.11 | 72.10 | 69.85 | **53.42** |
+| AFLOW shear modulus | log10 GPa | 0.295 | **0.291** | 0.352 | 0.525 | 0.472 | **0.449** |
+| MP shear modulus | GPa | 11.54 | **10.92** | 14.14 | 77.54 | 69.93 | **65.45** |
+| MP elastic anisotropy | unitless | **2.314** | 2.382 | 2.344 | 61.21 | **59.02** | 59.80 |
+| AFLOW Debye temp | log10 K | 0.164 | **0.149** | 0.193 | 0.367 | 0.307 | **0.292** |
+
+**Headline — the paper's central claim reproduces natively, and the Transduction ablation
+isolates the bilinear structure as the active ingredient.** In **7 of 8** tasks BLT has the
+**best OOD MAE** and (in 7/8) the **worst ID MAE** — the underfit-ID / extrapolate-OOD
+signature. **Transduction sits strictly between MLP and BLT on OOD in 7/8** tasks: it shares
+BLT's anchor reparametrization but an unstructured readout, so the MLP→Transduction→BLT
+gradient shows the bilinear low-rank readout — not merely the `(anchor, δ)` reparametrization —
+is what buys the extrapolation. El-aniso is a 3-way ~tie at OOD (59–61). AFLOW bulk BLT OOD =
+**47.47**, essentially the paper's 47.4.
+
+### Figures (`analysis/figures/`)
+
+- `ku_degradation_3way.png` — "Known Unknowns" edition (mirrors
+  `dataset-research/.../ku_degradation.png`): OOD/ID MAE blow-up per head across all 8 tasks,
+  PES-derivability-tier ordered. **Now overlays the dataset-research paper** per task: ours (solid,
+  left: MLP/Transduction/BLT) vs paper (hatched, right: Ridge/MODNet/CrabNet/BLT). BLT has the
+  lowest blow-up within *both* groups in nearly every task — pattern matches the paper.
+- `ku_relative_3way.png` — "Known Unknowns" edition (mirrors `.../ku_bt_relative.png`): baseline
+  MAE ÷ BLT MAE per task, ID and OOD panels. **Now overlays the paper**, offset with ours/paper
+  sub-ticks: ours = circles (vs MLP / vs Transduction), paper = diamonds (vs Ridge / vs best-e2e),
+  suite-coloured. Off-scale Ridge ratios (e.g. el-aniso ID ≈ 9×) capped with an up-arrow + value.
+  ID: ours below 1 (BLT underfits) like the paper's best-e2e; OOD: ours above 1 (BLT wins) — paper
+  best-e2e is closer to 1 (its strong e2e models nearly match BLT on these tasks).
+- Method colours match matex-fm's head-comparison palette (MLP blue, Transduction green, BLT
+  orange) consistently across all figures, for side-by-side reading vs matex-fm.
+- `mirror_{gap,bulk,shear}.png` — matex-fm style (mirrors `matex-fm/.../moduli_*.png` /
+  `final_results.png`): ID (top) / OOD (bottom) MAE, faceted by source suite (each self-scaled
+  with its own unit), 3 method bars, mean ± per-test SEM. **Standalone** — matex-fm's
+  egap/bulk/shear are matbench tasks in different units/OOD-splits (moduli in log10 GPa), so no
+  cross-repo numeric overlay is valid; these mirror the *style* with matex composition-Z data.
+
+### Caveats
+
+- **Single seed** (seed 0). OOD splits are the shipped `ood.csv` (deterministic), so seeds vary
+  only init/pairing/id-subset; a 3-seed pass is the natural follow-up.
+- **Not the same benchmarks as matex-fm.** matex-fm uses matbench `mp_gap`/`log_kvrh`/`log_gvrh`
+  (MLIP-Z, top-5% OOD); these are AFLOW/MP composition-Z tasks with shipped OOD splits.
+- Reproduction tooling: `blt/utils/aggregate_three_way.py` (table), `analysis/plot_three_way.py` (figures).
+
+### Cross-repo figure: BLT-relative, matex point vs matex-fm sweep (2026-06-11)
+
+`cross_repo_blt_relative.png` — for the 3 datasets shared with matex-fm (MP bulk, MP shear, band
+gap), how do MLP and plain Transduction fare **relative to BLT**, in matex (composition-Z, single
+Basis-A point) vs matex-fm (MLIP-Z, full UMA seed-0 head-compare sweep)? Anchor = BLT mean per
+repo/dataset/split; y = method MAE ÷ BLT-mean MAE (log). Absolute units differ (GPa/eV shipped-
+split vs log10 GPa/meV top-5%), but the BLT-relative ratio is unitless so the comparison is valid.
+
+- matex-fm sweep scope (per your decision): UMA, seed 0, frozen pool + all trainable head sizes ×
+  {argmin, ρ-ball}. Excluded: gap's stop-grad (`sg1`) BLT runs — not a requested dim and one
+  (`blthead-nl3-sg1`) **diverged** (MAE ~2.3M meV); a `>1e4 meV` divergence guard enforces this.
+  Point counts: bulk/shear mlp=2 trans=4 blt=4; gap mlp=4 trans=6 blt=8.
+- Harvest: `analysis/plot_cross_repo.py` (reads matex eval pkls + matex-fm logs under
+  `$SCRATCH/matex-fm_data/logs/{moduli_head_compare_54285655, head_*_control, a6_rhoball_*}` and
+  `matex-fm/scripts/analysis/outputs/a6_summary.csv`).
+- **Finding**: ID — MLP and Transduction beat BLT in *both* repos (BLT underfits ID), consistent.
+  OOD — in matex (composition-Z) BLT clearly beats both on all three; in matex-fm (MLIP-Z) BLT's
+  OOD edge is smaller and config-dependent (on shear several MLP/Transduction sweep configs beat
+  BLT). I.e. BLT's extrapolation advantage is more pronounced/robust on composition descriptors
+  than on MLIP embeddings, where strong MLP/transduction configs often match it.

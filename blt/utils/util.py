@@ -57,6 +57,8 @@ def data_load(loaddir):
 def define_model(model_type, obs_size, ac_size, hidden_layer_size, feature_dim, hidden_depth):
     if model_type == 'mlp':
         model = MlpPredictor(obs_size, ac_size, hidden_layer_size, hidden_depth)
+    elif model_type == 'transduction':
+        model = TransductionPredictor(obs_size, ac_size, hidden_layer_size, hidden_depth)
     elif model_type == 'bilinear':
         model = BilinearPredictor(obs_size, ac_size, hidden_layer_size, feature_dim, hidden_depth)
     elif model_type == 'bilinear_scalardelta':
@@ -79,7 +81,7 @@ def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, tr
         curr_test = test_X[k][None]
         gt_output = test_Y[k]
         #get delta
-        if model_type in ['nn', 'bilinear', 'bilinear_scalardelta']:
+        if model_type in ['nn', 'bilinear', 'bilinear_scalardelta', 'transduction']:
             closest_train, anchor_idx, train_analogy_pair_idx = transducer.choose_anchor(
                 curr_test, test_formula[k], use_dom_know_eval, return_anchor=True, verbose=verbose)
             preds['anchor_idxs'].append(anchor_idx)
@@ -91,7 +93,7 @@ def eval_supervised(model_type, model, logdir, eval_dataset, similarity_type, tr
         #eval with model
         if model_type == 'mlp':
             y = model(torch.Tensor(curr_test).to(device)).cpu().detach().numpy()[0]
-        elif model_type == 'bilinear' or model_type == 'bilinear_scalardelta':
+        elif model_type in ['bilinear', 'bilinear_scalardelta', 'transduction']:
             y = model(torch.Tensor(closest_train).to(device), torch.Tensor(delta).to(device)).cpu().detach().numpy()[0]
 
         preds['preds'].append(y)
